@@ -104,5 +104,41 @@ V rámci DBA profilu se definují různé typy přenosových kapacit, které odp
 
 [GEM porty](#gem-port) v rámci [T-CONT](#t-cont) sdílí tuto přidělenou šířku pásma.
 
+## VLANIF
+
+V kotextu OLT představuje VLANIF (VLAN Interface) virtuální rozhraní na 3. síťové vrstvě, které slouží k přiřazení IP adresy konkrétní VLANě. VLANIF umožňuje, aby OLT vystupovalo v síti jako samostatný koncový bod s vlastní IP adresou.
+
+### Rozhraní pro „In-band“ správu
+
+VLANIF je klíčové pro nastavení tzv. in-band managementu. To znamená, že OLT můžete spravovat skrze jeho běžné datové uplink porty namísto použití dedikovaného fyzického MGMT portu / Management WiFi. Pokud chcete OLT konfigurovat z počítače připojeného do stejné datové sítě, musíte vytvořit VLANIF rozhraní pro VLANu, kterou používáte pro správu.
+
+Bez konfigurace VLANIF by OLT pouze přepínalo pakety, ale nemělo by adresu, na kterou se lze připojit přes webový prohlížeč (HTTP/HTTPS) nebo Telnet/SSH. Vytvoření tohoto rozhraní je také nezbytným předpokladem pro:
+
+* **Nastavení Gateway**: Aby OLT mohlo komunikovat se zařízeními mimo svou lokální podstíť, například se serverem CMS, musí mít VLANIF rozhraní definovanou bránu.
+* **Routování**: VLANIF umožňuje OLT využívat funkce 3. vrstvy, jako je statické směrování nebo DHCP-relay.
+
+## CMS
+
+ CMS (Cloud Managed System) je platforma pro správu sítě. Slouží jako integrované řešení pro provoz a údržbu. Platforma umožňuje **centralizovanou správu**, vizuální monitoring a inteligentní údržbu různých síťových prvků, jako jsou jednotky ONT, OLT, switche a routery.
+
+### Flexibilní správa různých zařízení
+
+Systém je navržen tak, aby zvládal zařízení různých výrobců a různé komunikační protokoly:
+
+* **OLT Management:** Zařízení C-DATA jsou spravována přes protokol **MQTT**, zatímco OLT třetích stran (např. Huawei, ZTE nebo V-SOL) lze spravovat přes **SNMP**
+
+* **ONT Management:** CMS umožňuje přímou správu ONT přes **TR-069** nebo nepřímou správu skrze OLT pomocí protokolu [**OMCI**](#omci)
+
+### Vizuální monitoring a diagnostika
+
+CMS poskytuje **grafické rozhraní** pro sledování stavu sítě v reálném čase:
+*  Nabízí přehledné **karty zařízení**, kde barvy (zelená, žlutá, červená) signalizují online stav a závažnost případných alarmů
+*  Umožňuje sledovat statistiky alarmů, trendy a provádět **automatickou diagnostiku poruch** u koncových uživatelů
+*  Poskytuje detailní pohled na výkonnostní metriky, jako je síla optického signálu (RX/TX), vytížení CPU nebo paměti
+
+### Škálovatelnost a dostupnost
+
+Platforma podporuje **soukromé nasazení** na fyzických strojích i cloudových hostitelích. Je navržena pro horizontální expanzi, což znamená, že dokáže obsloužit prakticky neomezený počet připojených zařízení v závislosti na výkonu serveru.
+
 
 
