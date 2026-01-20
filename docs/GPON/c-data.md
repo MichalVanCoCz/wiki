@@ -21,7 +21,7 @@ Aby bylo možné OLT spravovat z počítače připojeného do stejné datové s�
    1. V sekci VLANIF klikněte na tlačítko `Gateway`
    2. Vyberte rozhraní `Vlanif1` a zadejte IP adresu výchozí brány vašeho routeru
 
-> ⚠️ Pozor: Po změně konfigurace je potřeba nastavení vždy uložit tlačítkem 💾 (Save Config) v horní liště, jinak se po restartu OLT změny ztratí
+> ⚠️ Po dokončení konfigurace v CMS vždy klikněte na tlačítko 💾 (Save Config) v horní liště, aby se nastavení v OLT uložilo do trvalé paměti. Bez uložení by se při restartu OLT vrátilo k původnímu nastavení.
 
 ### Volitelné: Připojení do CMS (Cloud Management System)
 
@@ -89,10 +89,80 @@ Aby se nastavení automaticky aplikovalo na připojená ONT, musíte vytvořit p
 4. Vyberte konkrétní PON port (v případě víceportové OLT můžete vytvořit více politik pro různé porty)
 5. Přiřaďte dříve vytvořenou Auth Policy
 6. Vyberte ONU authmode 
-    * TODO: doplnit
+    * *TODO: doplnit co to vlastně dělá, nepodařilo se mi zjistit*
 7. Vyberte prioritu (pokud na jeden port dopadá více politik, OLT upřednostní tu s vyšší prioritou)
 8. Vyberte ONU matching-rules (Tento filtr určuje, pro která zařízení je politika určena)
     * `Any` (Jakékoli): Nejdůležitější volba pro hromadné nasazení. Pokud je zaškrtnuto, OLT aplikuje politiku na každou ONU, která se poprvé nahlásí na daném portu, bez ohledu na model nebo výrobce
     * Další možnosti (SN, Vendor ID, Software): Umožňují omezit automatizaci pouze na konkrétní kusy, výrobce (např. pouze C-DATA) nebo konkrétní verze firmwaru
 
-> ✅ Výsledek: Jakmile se jakékoliv ONT připojí k danému PON portu, OLT mu automaticky odešle konfiguraci, která z něj udělá bridge. Provoz z LAN portu ONT bude transparentně přenesen do vaší lokální sítě skrze uplink port OLT.
+> ✅ Jakmile se nyní jakékoliv ONT připojí k danému PON portu, OLT mu automaticky odešle konfiguraci, která z něj udělá bridge. Provoz z LAN portu ONT bude transparentně přenesen do vaší lokální sítě skrze uplink port OLT.
+
+> ⚠️ Po dokončení konfigurace v CMS vždy klikněte na tlačítko 💾 (Save Config) v horní liště, aby se nastavení v OLT uložilo do trvalé paměti. Bez uložení by se při restartu OLT vrátilo k původnímu nastavení.
+
+## ISP
+
+Tento návod vás provede nastavením profilů pro typický scénář: zákazník si zakoupil **100 Mbps symetrickou přípojku**. 
+
+### Omezení odesílání dat
+
+[**DBA profil**](GPON/pojmy.md#dba-profil) určuje, jak OLT přiděluje šířku pásma v upstreamu.
+
+1. Přejděte do `Deployment -> Profile -> DBA Profile` a klikněte na `Add`
+* **Profile Type**: Zvolte `Max (Type 4)`. Tento typ je ideální pro internetové služby, protože umožňuje dynamicky využívat pásmo až do nastaveného maxima
+* **Max Bandwidth**: Zadejte hodnotu `100 000 kbps` (odpovídá 100 Mbps)
+
+### Omezení stahování dat
+
+Zatímco DBA hlídá upstream, [**Traffic profil**](GPON/pojmy.md#traffic-profil) je klíčový pro downstream k zákazníkovi. Zde nastavujeme rychlostní strop a parametry pro plynulost.
+
+1. V menu přejděte na `Deployment -> Profile -> Traffic Profile` a zvolte `Add`
+    * **CIR (Committed Information Rate)**: Pro běžný internet můžete nechat na minimum, čímž umožníte agregaci linky
+    * **PIR (Peak Information Rate)**: Nastavte na `100 000 kbps`. Toto je maximální rychlost, které může zákazník dosáhnout, pokud je v síti volná kapacita
+    * **CBS (Committed Burst Size)**: Určuje objem dat pro **CIR**. Běžně se používá kolem `4 KB` až `16 KB` na každých `64 kbps` **CIR**
+    * **PBS (Peak Burst Size)** určuje velikost datového „nárazu“, který systém povolí plnou rychlostí PIR, než začne pakety striktně omezovat. Pro 100 Mbit se doporučuje hodnota v rozmezí `16 000 KB` až `32 000 KB`. Pokud ji nastavíte příliš malou, uživatel pocítí "drhnutí" internetu i při volné lince
+
+### Mapování provozu
+
+1. V sekci `Deployment -> Profile -> Line Profile` vytvořte nový profil a nastavte **Mapping-mode** na `VLAN`
+2. Přiřaďte **Tcont1** váš **DBA Profil**
+3. U **Gemport1** zapněte přepínač `Gemport car` a přiřaďte **Traffic Profil** pro downstream (je možné zvolit i traffic profile pro upstream jako dodatečné omezení přímo při vstupu do GEM portu, ale v tomto scénáři to není nutné) 
+4. V sekci **Mapping** zvolte User VLAN `Tag` a zadejte ID vaší VLAN (např. ID 100)
+
+### Schopnosti jednotky
+
+1. Přejděte na `Deployment -> Profile -> Service Profile` a klikněte na `Add`
+2. Ponechte porty (ETH, POTS, Wi-Fi) na `Adaptive`
+3. Pokud používáte **jednotky typu Bridge** (SFU), nastavte v sekci `Port Config` u portu ETH1 hodnotu `Native VLAN` na ID vaší internetové VLANy (např. 100). Tím zajistíte, že zákaznický router dostane data bez tagu. *TODO: tady to nesedí, takhle tam to nastavení nevypadá, pravděpodobně s tam někde bude volit i NAT*
+
+### WAN profile (pro jednotky typu HGU)
+
+1. Přejděte na `Deployment -> Profile -> WAN Profile` a klikněte na tlačítko `Add`
+2. Pojmenujte profil a klikněte na `Next`
+3. V dalším okně klikněte na `Add` a zapněte volbu `VLAN`. Do pole VLAN ID zadejte číslo VLANy, kterou jste si připravili pro internet (např. 100)
+4. Výběr protokolu (Mode): V poli Mode zvolte metodu, jakou zákazník získá IP adresu:
+    * **IPoE**: Nejčastější volba, kdy jednotka dostane adresu automaticky přes DHCP.
+    * **PPPoE**: Zvolte, pokud vyžadujete přihlašovací jméno a heslo.
+5. Určení typu služby (Service Type): V poli Service Type nastavte hodnotu INTERNET. Tím jednotce řeknete, že tento profil je určen pro běžný datový provoz.
+6. **MTU**: Pro IPoE (DHCP) ponechte 1500, pro PPPoE nastavte 1492.
+7. **Port Binding**: Tento krok je nejčastějším zdrojem chyb. Musíte zaškrtnout fyzické porty a Wi-Fi sítě, na kterých má internet fungovat. Jako univerzální řešení můžete vybrat všechny dostupné LAN porty a Wi-Fi SSID.
+
+### Automatizace a aktivace
+
+1. V `Deployment -> Auth Policy` klikněte na `Create Policy`
+2. V sekci Policy vyberte dříve vytvořený Line Profile, Service Profile a WAN Profile
+3. Následně v `Deployment -> Apply Policy` klikněte na `Add`
+4. Vyberte konkrétní PON port
+5. Přiřaďte dříve vytvořenou Auth Policy
+6. Vyberte ONU authmode `SN`
+7. Vyberte prioritu (pokud na jeden port dopadá více politik, OLT upřednostní tu s vyšší prioritou)
+8. Vyberte ONU matching-rules (Tento filtr určuje, pro která zařízení je politika určena)
+    * V tomto případě je vhodné použít `SN` a zadat seriové číšlo ONT zákazníka
+9. Potvrďte tlačítkem `Confirm`
+
+> ✅ Nyní, jakmile se připojí ONT se schodujícím se seriovým číslem k danému portu, OLT do ní automaticky nahraje nastavení pro 100 Mbps přípojku.
+
+> ⚠️ Po dokončení konfigurace v CMS vždy klikněte na tlačítko 💾 (Save Config) v horní liště, aby se nastavení v OLT uložilo do trvalé paměti. Bez uložení by se při restartu OLT vrátilo k původnímu nastavení.
+
+## Konfigurace WiFi 
+
+Vzdálená konfigurace WiFi na ONT jednotkách

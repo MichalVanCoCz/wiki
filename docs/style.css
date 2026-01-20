@@ -234,7 +234,7 @@ sup {
 
 body:not([data-platform^=Mac]) * {
     scrollbar-color: hsla(var(--mono-hue), var(--mono-saturation), 50%, 0.3) hsla(var(--mono-hue), var(--mono-saturation), 50%, 0.1);
-    scrollbar-width: thin
+    scrollbar-width: thin;
 }
 
 body:not([data-platform^=Mac]) * ::-webkit-scrollbar {

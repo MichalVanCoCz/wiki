@@ -140,5 +140,27 @@ CMS poskytuje **grafické rozhraní** pro sledování stavu sítě v reálném �
 
 Platforma podporuje soukromé nasazení na fyzických strojích i cloudových hostitelích. Je navržena pro horizontální expanzi, což znamená, že dokáže obsloužit prakticky neomezený počet připojených zařízení v závislosti na výkonu serveru.
 
+## Traffic profil
+
+Nastavení Traffic profilu je klíčovým krokem pro řízení šířky pásma v **downstreamu**. Zatímco [DBA profil](#dba-profil) se stará o upstream, Traffic profil definuje pravidla pro stahování dat.
+
+### Parametry
+
+* **CIR** (Committed Information Rate): Garantovaná přenosová rychlost
+    * Určuje minimální šířku pásma, kterou má zákazník (nebo služba) vždy k dispozici. OLT se snaží zajistit, aby tento objem dat prošel sítí i v případě vysokého vytížení linky.
+    * Ideální pro kritické služby jako VoIP (hlas) nebo IPTV, kde by kolísání rychlosti způsobilo výpadky.
+* **PIR** (Peak Information Rate): Maximální (špičková) přenosová rychlost
+    * Definuje absolutní strop, který nesmí datový tok překročit. Je to součet garantované rychlosti (CIR) a "nadbytečné" rychlosti, kterou může OLT přidělit, pokud je v síti zrovna volná kapacita
+* **CBS** (Committed Burst Size): Garantovaná velikost dávky dat
+    * Určuje objem dat, který může být přenesen rychlostí vyšší než CIR po velmi krátkou dobu, aniž by došlo k zahazování paketů. Pomáhá vyhlazovat drobné výkyvy v provozu.
+* **PBS** (Peak Burst Size): Maximální velikost dávky dat.
+    * Podobné jako CBS, ale vztahuje se k limitu PIR. Určuje, kolik dat může "proletět" špičkovou rychlostí v jednom okamžiku (burst). Jakmile je tento limit vyčerpán, OLT začne pakety nad rámec PIR nekompromisně zahazovat nebo označovat nižší prioritou.
+
+GPON využívá sdílené médium. OLT musí přesně vědět, kolik dat může do kterého GEM portu „pustit“, aby jeden stahující zákazník nezahltil celou větev pro ostatních 127 sousedů na stejném portu. Díky Traffic profilu na straně downstreamu a DBA profilu na straně uplinku máte plnou kontrolu nad obousměrným provozem v síti.
+
+## HGU vs SFU
+
+*TODO popsat*
+
 
 
