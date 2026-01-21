@@ -36,14 +36,14 @@ Pokud chcete OLT spravovat centrálně pomocí [platformy CMS](GPON/pojmy.md#cms
 
 ## Transparentní režim
 
-Tento návod slouží k nastavení sítě GPON tak, aby se celá optická distribuční síť (ODN) chovala jako transparentní prodloužení vaší lokální sítě (L2 bridge). V tomto režimu fungují jednotky ONT v podstatě jako „chytré optické převodníky", které pouze předávají data mezi vaším centrálním routerem a koncovým zařízením zákazníka bez jakékoliv další manipulace s IP adresami nebo routováním.
+Tento návod slouží k nastavení sítě GPON tak, aby se celá optická distribuční síť (ODN) chovala jako transparentní prodloužení vaší lokální sítě. V tomto režimu fungují jednotky ONT v podstatě jako „chytré optické převodníky", které pouze předávají data mezi vaším centrálním routerem a koncovým zařízením bez jakékoliv další manipulace s IP adresami nebo routováním.
 
 ### Příprava VLAN a Uplink portu
 
 Nejprve musíte definovat VLAN, která bude sloužit pro přenos dat z vaší lokální sítě, a nastavit uplinkový port tak, aby z něj data odcházela netagovaná (untagged).
 
 1. V menu `Configuration -> VLAN -> Port VLAN` vyberte uplinkový port (např. `GE1`).
-2. Nastavte Mode na Access a zadejte ID vaší servisní VLAN (např. `100`). V tomto režimu OLT při výstupu dat k vašemu routeru odstraní VLAN tag.
+2. Nastavte Mode na Access a zadejte ID VLAN ktrou chcete používat pro provoz mezi OLT a ONT (můžete ponechat výchozí `1`). 
 
 > ℹ️ Režim Access na straně OLT funguje tak, že při vstupu netagovaného rámce z vašeho routeru mu OLT přiřadí interní VLAN ID. Při výstupu dat směrem z OLT do routeru pak tento tag automaticky odstraní. Váš router vůbec netuší, že uvnitř optické sítě nějaká VLAN existuje.
 
@@ -52,7 +52,7 @@ Nejprve musíte definovat VLAN, která bude sloužit pro přenos dat z vaší lo
 [DBA profil](GPON/pojmy.md#dba-profil) určuje, jakou šířku pásma budou mít ONT k dispozici v upstreamu.
 
 1. V `Deployment -> Profile -> DBA Profile` a klikněte na `Add`
-2. Zvolte [typ profilu](GPON/pojmy.md#typy-šířky-pásma) např. `Max` a nastavte maximální šířku pásma (např. `1000000 kbps` pro 1 Gbps)
+2. Zvolte [typ profilu](GPON/pojmy.md#typy-šířky-pásma) např. `Max` a nastavte maximální šířku pásma (např. `1 000 000 kbps` pro 1 Gbps)
 
 ### Vytvoření Line profilu
 
@@ -63,15 +63,15 @@ Tento profil mapuje provoz z ONT do konkrétní VLAN skrze GEM porty.
 3. Přiřaďte Tcont1 dříve vytvořený DBA profil
 4. V části Mapping aktivujte přepínač `VLAN-transparent`
 
-### Vytvoření Service profilu (Servisní profil)
+### Vytvoření Service profilu
 
 Zde definujete fyzické parametry portů na ONT.
 
 1. V `Deployment -> Profile -> Service Profile` klikněte na `Add`
 2. Počet portů (ETH, POTS atd.) nastavte na `Adaptive` (automatické rozpoznání podle typu ONT)
-3. V kroku ONU Port (pro SFU jednotky) nastavte u vybraného portu (např. `ETH1`) Native VLAN na hodnotu vaší VLAN (např. `100`). Tím zajistíte, že netagovaná data z portu ONT dostanou správný tag pro průchod optickou sítí
+3. V kroku ONU Port (pro [SFU jednotky](GPON/pojmy.md#hgu-vs-sfu)) nastavte u vybraného portu (např. `ETH1`) Native VLAN na hodnotu vaší VLAN (např. `100`). Tím zajistíte, že netagovaná data z portu ONT dostanou správný tag pro průchod optickou sítí
 
-### Vytvoření WAN profilu (Bridge)
+### Vytvoření WAN profilu
 
 Tento profil řekne ONT, že má fungovat jako bridge, nikoliv jako router.
 
@@ -79,17 +79,16 @@ Tento profil řekne ONT, že má fungovat jako bridge, nikoliv jako router.
 2. V sekci `WAN Configuration` klikněte na `Add` Nastavte Mode na `Bridge`
 4. Zaškrtněte porty (např. `LAN1`, `LAN2`), které mají být do tohoto bridge zahrnuty
 
-### Vytvoření a aplikace politiky (Auth Policy, Apply Policy)
+### Vytvoření Auth Policy a Apply Policy
 
-Aby se nastavení automaticky aplikovalo na připojená ONT, musíte vytvořit politiku.
+Aby se nastavení automaticky aplikovalo na připojená ONT, musíte vytvořit Auth Policy a Apply Policy.
 
 1. V `Deployment -> Auth Policy` klikněte na `Create Policy`
 2. V sekci Policy vyberte dříve vytvořený Line Profile, Service Profile a WAN Profile
 3. Následně v `Deployment -> Apply Policy` klikněte na `Add`
 4. Vyberte konkrétní PON port (v případě víceportové OLT můžete vytvořit více politik pro různé porty)
 5. Přiřaďte dříve vytvořenou Auth Policy
-6. Vyberte ONU authmode 
-    * *TODO: doplnit co to vlastně dělá, nepodařilo se mi zjistit*
+6. Vyberte ONU authmode `SN`
 7. Vyberte prioritu (pokud na jeden port dopadá více politik, OLT upřednostní tu s vyšší prioritou)
 8. Vyberte ONU matching-rules (Tento filtr určuje, pro která zařízení je politika určena)
     * `Any` (Jakékoli): Nejdůležitější volba pro hromadné nasazení. Pokud je zaškrtnuto, OLT aplikuje politiku na každou ONU, která se poprvé nahlásí na daném portu, bez ohledu na model nebo výrobce
@@ -103,7 +102,7 @@ Aby se nastavení automaticky aplikovalo na připojená ONT, musíte vytvořit p
 
 Tento návod vás provede nastavením profilů pro typický scénář: zákazník si zakoupil **100 Mbps symetrickou přípojku**. 
 
-### Omezení odesílání dat
+### Vytvoření DBA profilu
 
 [**DBA profil**](GPON/pojmy.md#dba-profil) určuje, jak OLT přiděluje šířku pásma v upstreamu.
 
@@ -121,32 +120,39 @@ Zatímco DBA hlídá upstream, [**Traffic profil**](GPON/pojmy.md#traffic-profil
     * **CBS (Committed Burst Size)**: Určuje objem dat pro **CIR**. Běžně se používá kolem `4 KB` až `16 KB` na každých `64 kbps` **CIR**
     * **PBS (Peak Burst Size)** určuje velikost datového „nárazu“, který systém povolí plnou rychlostí PIR, než začne pakety striktně omezovat. Pro 100 Mbit se doporučuje hodnota v rozmezí `16 000 KB` až `32 000 KB`. Pokud ji nastavíte příliš malou, uživatel pocítí "drhnutí" internetu i při volné lince
 
-### Mapování provozu
+### Vytvoření Line profilu
 
 1. V sekci `Deployment -> Profile -> Line Profile` vytvořte nový profil a nastavte **Mapping-mode** na `VLAN`
 2. Přiřaďte **Tcont1** váš **DBA Profil**
 3. U **Gemport1** zapněte přepínač `Gemport car` a přiřaďte **Traffic Profil** pro downstream (je možné zvolit i traffic profile pro upstream jako dodatečné omezení přímo při vstupu do GEM portu, ale v tomto scénáři to není nutné) 
 4. V sekci **Mapping** zvolte User VLAN `Tag` a zadejte ID vaší VLAN (např. ID 100)
 
-### Schopnosti jednotky
+### Vytvoření Service profilu
 
 1. Přejděte na `Deployment -> Profile -> Service Profile` a klikněte na `Add`
 2. Ponechte porty (ETH, POTS, Wi-Fi) na `Adaptive`
-3. Pokud používáte **jednotky typu Bridge** (SFU), nastavte v sekci `Port Config` u portu ETH1 hodnotu `Native VLAN` na ID vaší internetové VLANy (např. 100). Tím zajistíte, že zákaznický router dostane data bez tagu. *TODO: tady to nesedí, takhle tam to nastavení nevypadá, pravděpodobně s tam někde bude volit i NAT*
+3.  * Pokud používáte [**jednotky typu SFU**](GPON/pojmy.md#hgu-vs-sfu) zde určíte, jak se mají chovat jednotlivé ethernetové zásuvky na jednotce
+        1. Přepněte volbu na `Concern`
+        2. V tabulce portů vyberte konkrétní port (např. Port 1) a klikněte na `Edit`
+        3. Mode: zvolte `SFU`
+        4. Native VLAN: Zde zadejte ID vaší internetové VLANy (např. 100). Toto nastavení zajistí, že data, která přijdou ze zákazníkova routeru, dostanou v ONU správný tag.
+3.  * Pokud používáte [**jednotky typu HGU**](GPON/pojmy.md#hgu-vs-sfu), přepněte volbu na `Unconcern`
 
-### WAN profile (pro jednotky typu HGU)
+### Vytvoření WAN profilu
+
+Pokud používáte [**ONT typu HGU**](GPON/pojmy.md#hgu-vs-sfu) (s integrovaným routerem), **musíte vytvořit WAN profil**, který určí, jakým způsobem bude jednotka získávat IP adresu pro připojení k internetu. V případě [**SFU**](GPON/pojmy.md#hgu-vs-sfu) se WAN profil **nevytváří**, potřebné nastavení se provede na routeru zákazníka.
 
 1. Přejděte na `Deployment -> Profile -> WAN Profile` a klikněte na tlačítko `Add`
 2. Pojmenujte profil a klikněte na `Next`
 3. V dalším okně klikněte na `Add` a zapněte volbu `VLAN`. Do pole VLAN ID zadejte číslo VLANy, kterou jste si připravili pro internet (např. 100)
-4. Výběr protokolu (Mode): V poli Mode zvolte metodu, jakou zákazník získá IP adresu:
-    * **IPoE**: Nejčastější volba, kdy jednotka dostane adresu automaticky přes DHCP.
-    * **PPPoE**: Zvolte, pokud vyžadujete přihlašovací jméno a heslo.
-5. Určení typu služby (Service Type): V poli Service Type nastavte hodnotu INTERNET. Tím jednotce řeknete, že tento profil je určen pro běžný datový provoz.
-6. **MTU**: Pro IPoE (DHCP) ponechte 1500, pro PPPoE nastavte 1492.
+4. Mode: V poli Mode zvolte metodu, jakou zákazník získá IP adresu:
+    * **IPoE**: Nejčastější volba, kdy jednotka dostane adresu automaticky přes DHCP
+    * **PPPoE**: Potřeba zadat přihlašovací jméno a heslo
+5. V poli Service Type nastavte hodnotu `INTERNET`. Tím jednotce řeknete, že tento profil je určen pro běžný datový provoz.
+6. **MTU**: Pro IPoE (DHCP) ponechte `1500`, pro PPPoE nastavte `1492`.
 7. **Port Binding**: Tento krok je nejčastějším zdrojem chyb. Musíte zaškrtnout fyzické porty a Wi-Fi sítě, na kterých má internet fungovat. Jako univerzální řešení můžete vybrat všechny dostupné LAN porty a Wi-Fi SSID.
 
-### Automatizace a aktivace
+### Vytvoření Auth Policy a Apply Policy
 
 1. V `Deployment -> Auth Policy` klikněte na `Create Policy`
 2. V sekci Policy vyberte dříve vytvořený Line Profile, Service Profile a WAN Profile
@@ -165,4 +171,10 @@ Zatímco DBA hlídá upstream, [**Traffic profil**](GPON/pojmy.md#traffic-profil
 
 ## Konfigurace WiFi 
 
-Vzdálená konfigurace WiFi na ONT jednotkách
+*TODO: To bude trochu složitější, protože OMCI na to nebude úplně dělané. Takové věci se asi budou muset řešit přes TR-069 aby to bylo alespoň do nějaké míry standardizované. Jinak leda přes web UI na samotné ONT.*
+
+# Deployment profily
+
+*TODO: Asi by bylo dobrý popsat, co dělá každý profil do podrobna a co je tam možné nastavit. Scénáře možná stavit až na tom. Použít první verzi jako "minimální produkt" to co je napsané teď a od toho se odpíchnout.*
+
+*TODO: Možná by bylo dobré zajistit nějaké datasheety k jednotlivým ONT kde by byl přehled jaké parametry zkousnou. Stalo se mi, že připravené profily byly odeslány na ONT, ale zkouslo to pouze HGU od C-DATA, zatím co od BDCOM "failed".*

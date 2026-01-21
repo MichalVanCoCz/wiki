@@ -1,3 +1,59 @@
+## VLANIF
+
+V kotextu OLT představuje VLANIF (VLAN Interface) virtuální rozhraní na 3. síťové vrstvě, které slouží k přiřazení IP adresy konkrétní VLANě. VLANIF umožňuje, aby OLT vystupovalo v síti jako samostatný koncový bod s vlastní IP adresou.
+
+### Rozhraní pro „In-band“ správu
+
+VLANIF je klíčové pro nastavení tzv. in-band managementu. To znamená, že OLT můžete spravovat skrze jeho běžné datové uplink porty namísto použití dedikovaného fyzického MGMT portu / Management WiFi. Pokud chcete OLT konfigurovat z počítače připojeného do stejné datové sítě, musíte vytvořit VLANIF rozhraní pro VLANu, kterou používáte pro správu.
+
+Bez konfigurace VLANIF by OLT pouze přepínalo pakety, ale nemělo by adresu, na kterou se lze připojit přes webový prohlížeč (HTTP/HTTPS) nebo Telnet/SSH. Vytvoření tohoto rozhraní je také nezbytným předpokladem pro:
+
+* **Nastavení Gateway**: Aby OLT mohlo komunikovat se zařízeními mimo svou lokální podstíť, například se serverem CMS, musí mít VLANIF rozhraní definovanou bránu.
+* **Routování**: VLANIF umožňuje OLT využívat funkce 3. vrstvy, jako je statické směrování nebo DHCP-relay.
+
+## CMS
+
+CMS (Cloud Managed System) je platforma pro správu sítě. Slouží jako integrované řešení pro provoz a údržbu. Platforma umožňuje **centralizovanou správu**, vizuální monitoring a inteligentní údržbu různých síťových prvků, jako jsou jednotky ONT, OLT, switche a routery.
+
+### Flexibilní správa různých zařízení
+
+Systém je navržen tak, aby zvládal zařízení různých výrobců a různé komunikační protokoly:
+
+* **OLT Management:** Zařízení C-DATA jsou spravována přes protokol **MQTT**, zatímco OLT třetích stran (např. Huawei, ZTE nebo V-SOL) lze spravovat přes **SNMP**
+* **ONT Management:** CMS umožňuje přímou správu ONT přes **TR-069** nebo nepřímou správu skrze OLT pomocí protokolu [**OMCI**](#omci)
+
+![](assets/20260121_111841_CMS.png)
+
+### Vizuální monitoring a diagnostika
+
+CMS poskytuje **grafické rozhraní** pro sledování stavu sítě v reálném čase:
+
+* Nabízí přehledné **karty zařízení**, kde barvy (zelená, žlutá, červená) signalizují online stav a závažnost případných alarmů
+* Umožňuje sledovat statistiky alarmů, trendy a provádět **automatickou diagnostiku poruch** u koncových uživatelů
+* Poskytuje detailní pohled na výkonnostní metriky, jako je síla optického signálu (RX/TX), vytížení CPU nebo paměti
+
+### Škálovatelnost a dostupnost
+
+Platforma podporuje soukromé nasazení na fyzických strojích i cloudových hostitelích. Je navržena pro horizontální expanzi, což znamená, že dokáže obsloužit prakticky neomezený počet připojených zařízení v závislosti na výkonu serveru.
+
+## OMCI
+
+OMCI (Optical Network Unit Management and Control Interface) je standartizovaný protokol (definovaný doporučením ITU-T G.984.4), který slouží k vzdálené správě a konfiguraci ONT přímo z OLT. Pracuje na 2. a 3. vrstvě a funguje jako most mezi OLT a ONT, který umožňuje poskytovatelům služeb spravovat koncová zařízení bez nutnosti manuálního zásahu u zákazníka.
+
+K přenosu OMCI zpráv využívá OLT dedikovaný logický kanál zvaný OMCC (ONT Management and Control Channel). Tento kanál běží nad specifickým [GEM portem](#gem-port), který je vytvořen automaticky během inicializace ONT.
+
+### Správa konfigurace
+
+OLT přes OMCI definuje, jak se má ONT chovat, což zahrnuje vytváření T-CONTů, mapování GEM portů, nastavování pravidel pro VLAN tagování a definování parametrů kvality služeb (QoS).
+
+* **Správa poruch**: Protokol umožňuje OLT detekovat a reagovat na chyby v reálném čase, například generovat alarmy při degradaci signálu nebo selhání hardwaru.
+* **Sledování výkonu**: ONT skrze OMCI neustále hlásí statistiky provozu, jako je propustnost, chybovost paketů, latence nebo síla optického signálu.
+* **Údržba a upgrady**: OMCI usnadňuje vzdálenou aktualizaci firmwaru ONT a diagnostiku spojení.
+
+### Interoperabilita (Vendor-neutrality)
+
+Díky tomu, že je OMCI mezinárodním standardem, zajišťuje, že OLT od jednoho výrobce (např. C-DATA, Bdcom) může komunikovat a spravovat ONT od jiných výrobců (např. Huawei, TP-Link), pokud obě zařízení standard OMCI plně podporují. To dává operátorům flexibilitu při výběru koncových zařízení bez závislosti na jednom dodavateli.
+
 ## GEM Port
 
 **GEM Port** (GPON Encapsulation Method) je základní virtuální transportní kanál sloužící k přenosu dat mezi OLT a ONT v sítích GPON. Jeho hlavním účelem je zapouzdření (enkapsulace) uživatelských datových rámců, nejčastěji Ethernetových, do fragmentů proměnlivé délky, které jsou následně posílány skrze optickou síť.
@@ -54,24 +110,7 @@ V praxi se používají různé typy T-CONT (označované jako Type 1 až Type 5
 * Garantovaná šířka pásma: Pro stabilní služby (např. video).
 * Best-effort (maximální): Pro běžný internetový provoz, kde rychlost kolísá podle vytížení sítě.
 
-## OMCI
-
-OMCI (Optical Network Unit Management and Control Interface) je standartizovaný protokol (definovaný doporučením ITU-T G.984.4), který slouží k vzdálené správě a konfiguraci ONT přímo z OLT. Pracuje na 2. a 3. vrstvě a funguje jako most mezi OLT a ONT, který umožňuje poskytovatelům služeb spravovat koncová zařízení bez nutnosti manuálního zásahu u zákazníka.
-
-K přenosu OMCI zpráv využívá OLT dedikovaný logický kanál zvaný OMCC (ONT Management and Control Channel). Tento kanál běží nad specifickým [GEM portem](#gem-port), který je vytvořen automaticky během inicializace ONT.
-
-### Správa konfigurace
-
-OLT přes OMCI definuje, jak se má ONT chovat, což zahrnuje vytváření T-CONTů, mapování GEM portů, nastavování pravidel pro VLAN tagování a definování parametrů kvality služeb (QoS).
-* **Správa poruch**: Protokol umožňuje OLT detekovat a reagovat na chyby v reálném čase, například generovat alarmy při degradaci signálu nebo selhání hardwaru.
-* **Sledování výkonu**: ONT skrze OMCI neustále hlásí statistiky provozu, jako je propustnost, chybovost paketů, latence nebo síla optického signálu.
-* **Údržba a upgrady**: OMCI usnadňuje vzdálenou aktualizaci firmwaru ONT a diagnostiku spojení.
-
-### Interoperabilita (Vendor-neutrality)
-
-Díky tomu, že je OMCI mezinárodním standardem, zajišťuje, že OLT od jednoho výrobce (např. C-DATA, Bdcom) může komunikovat a spravovat ONT od jiných výrobců (např. Huawei, TP-Link), pokud obě zařízení standard OMCI plně podporují. To dává operátorům flexibilitu při výběru koncových zařízení bez závislosti na jednom dodavateli.
-
-## BWmap 
+## BWmap
 
 Primární funkcí BWmap (Bandwidth Map) je přidělování vysílacích časů pro **upstream** jednotlivým jednotkám ONT.
 
@@ -104,42 +143,6 @@ V rámci DBA profilu se definují různé typy přenosových kapacit, které odp
 
 [GEM porty](#gem-port) v rámci [T-CONT](#t-cont) sdílí tuto přidělenou šířku pásma.
 
-## VLANIF
-
-V kotextu OLT představuje VLANIF (VLAN Interface) virtuální rozhraní na 3. síťové vrstvě, které slouží k přiřazení IP adresy konkrétní VLANě. VLANIF umožňuje, aby OLT vystupovalo v síti jako samostatný koncový bod s vlastní IP adresou.
-
-### Rozhraní pro „In-band“ správu
-
-VLANIF je klíčové pro nastavení tzv. in-band managementu. To znamená, že OLT můžete spravovat skrze jeho běžné datové uplink porty namísto použití dedikovaného fyzického MGMT portu / Management WiFi. Pokud chcete OLT konfigurovat z počítače připojeného do stejné datové sítě, musíte vytvořit VLANIF rozhraní pro VLANu, kterou používáte pro správu.
-
-Bez konfigurace VLANIF by OLT pouze přepínalo pakety, ale nemělo by adresu, na kterou se lze připojit přes webový prohlížeč (HTTP/HTTPS) nebo Telnet/SSH. Vytvoření tohoto rozhraní je také nezbytným předpokladem pro:
-
-* **Nastavení Gateway**: Aby OLT mohlo komunikovat se zařízeními mimo svou lokální podstíť, například se serverem CMS, musí mít VLANIF rozhraní definovanou bránu.
-* **Routování**: VLANIF umožňuje OLT využívat funkce 3. vrstvy, jako je statické směrování nebo DHCP-relay.
-
-## CMS
-
- CMS (Cloud Managed System) je platforma pro správu sítě. Slouží jako integrované řešení pro provoz a údržbu. Platforma umožňuje **centralizovanou správu**, vizuální monitoring a inteligentní údržbu různých síťových prvků, jako jsou jednotky ONT, OLT, switche a routery.
-
-### Flexibilní správa různých zařízení
-
-Systém je navržen tak, aby zvládal zařízení různých výrobců a různé komunikační protokoly:
-
-* **OLT Management:** Zařízení C-DATA jsou spravována přes protokol **MQTT**, zatímco OLT třetích stran (např. Huawei, ZTE nebo V-SOL) lze spravovat přes **SNMP**
-
-* **ONT Management:** CMS umožňuje přímou správu ONT přes **TR-069** nebo nepřímou správu skrze OLT pomocí protokolu [**OMCI**](#omci)
-
-### Vizuální monitoring a diagnostika
-
-CMS poskytuje **grafické rozhraní** pro sledování stavu sítě v reálném čase:
-*  Nabízí přehledné **karty zařízení**, kde barvy (zelená, žlutá, červená) signalizují online stav a závažnost případných alarmů
-*  Umožňuje sledovat statistiky alarmů, trendy a provádět **automatickou diagnostiku poruch** u koncových uživatelů
-*  Poskytuje detailní pohled na výkonnostní metriky, jako je síla optického signálu (RX/TX), vytížení CPU nebo paměti
-
-### Škálovatelnost a dostupnost
-
-Platforma podporuje soukromé nasazení na fyzických strojích i cloudových hostitelích. Je navržena pro horizontální expanzi, což znamená, že dokáže obsloužit prakticky neomezený počet připojených zařízení v závislosti na výkonu serveru.
-
 ## Traffic profil
 
 Nastavení Traffic profilu je klíčovým krokem pro řízení šířky pásma v **downstreamu**. Zatímco [DBA profil](#dba-profil) se stará o upstream, Traffic profil definuje pravidla pro stahování dat.
@@ -147,20 +150,35 @@ Nastavení Traffic profilu je klíčovým krokem pro řízení šířky pásma v
 ### Parametry
 
 * **CIR** (Committed Information Rate): Garantovaná přenosová rychlost
-    * Určuje minimální šířku pásma, kterou má zákazník (nebo služba) vždy k dispozici. OLT se snaží zajistit, aby tento objem dat prošel sítí i v případě vysokého vytížení linky.
-    * Ideální pro kritické služby jako VoIP (hlas) nebo IPTV, kde by kolísání rychlosti způsobilo výpadky.
+  * Určuje minimální šířku pásma, kterou má zákazník (nebo služba) vždy k dispozici. OLT se snaží zajistit, aby tento objem dat prošel sítí i v případě vysokého vytížení linky.
+  * Ideální pro kritické služby jako VoIP (hlas) nebo IPTV, kde by kolísání rychlosti způsobilo výpadky.
 * **PIR** (Peak Information Rate): Maximální (špičková) přenosová rychlost
-    * Definuje absolutní strop, který nesmí datový tok překročit. Je to součet garantované rychlosti (CIR) a "nadbytečné" rychlosti, kterou může OLT přidělit, pokud je v síti zrovna volná kapacita
+  * Definuje absolutní strop, který nesmí datový tok překročit. Je to součet garantované rychlosti (CIR) a "nadbytečné" rychlosti, kterou může OLT přidělit, pokud je v síti zrovna volná kapacita
 * **CBS** (Committed Burst Size): Garantovaná velikost dávky dat
-    * Určuje objem dat, který může být přenesen rychlostí vyšší než CIR po velmi krátkou dobu, aniž by došlo k zahazování paketů. Pomáhá vyhlazovat drobné výkyvy v provozu.
+  * Určuje objem dat, který může být přenesen rychlostí vyšší než CIR po velmi krátkou dobu, aniž by došlo k zahazování paketů. Pomáhá vyhlazovat drobné výkyvy v provozu.
 * **PBS** (Peak Burst Size): Maximální velikost dávky dat.
-    * Podobné jako CBS, ale vztahuje se k limitu PIR. Určuje, kolik dat může "proletět" špičkovou rychlostí v jednom okamžiku (burst). Jakmile je tento limit vyčerpán, OLT začne pakety nad rámec PIR nekompromisně zahazovat nebo označovat nižší prioritou.
+  * Podobné jako CBS, ale vztahuje se k limitu PIR. Určuje, kolik dat může "proletět" špičkovou rychlostí v jednom okamžiku (burst). Jakmile je tento limit vyčerpán, OLT začne pakety nad rámec PIR nekompromisně zahazovat nebo označovat nižší prioritou.
 
 GPON využívá sdílené médium. OLT musí přesně vědět, kolik dat může do kterého GEM portu „pustit“, aby jeden stahující zákazník nezahltil celou větev pro ostatních 127 sousedů na stejném portu. Díky Traffic profilu na straně downstreamu a DBA profilu na straně uplinku máte plnou kontrolu nad obousměrným provozem v síti.
 
-## HGU vs SFU
+## HGU vs. SFU
 
-*TODO popsat*
+SFU a HGU představují dva odlišné přístupy k tomu, jakým způsobem je zakončena optická trasa u zákazníka a jak se toto zařízení ONT chová v síti.
 
+Základní rozdíl spočívá v tom, zda zařízení funguje pouze jako bridge, nebo jako plnohodnotný router.
 
+### SFU
 
+SFU (Single Family Unit) je v podstatě Layer 2 zařízení
+
+* Pracuje výhradně v režimu Bridge
+* Pouze převádí optický signál na metalický Ethernet. Neřeší IP adresy, NAT ani Wi-Fi
+* Ideální v případech, kdy si zákazník chce zapojit vlastní router. Veškerou inteligenci sítě (vytáčení PPPoE, DHCP klient) přebírá až router za SFU
+
+### HGU
+
+HGU (Home Gateway Unit) je Layer 3 (L3) zařízení. Jde o komplexní „vše v jednom“ jednotku, která v sobě integruje optický modem, router a často i Wi-Fi přístupový bod
+
+* Pracuje v režimu Router
+* Zajišťuje NAT, DHCP server pro domácí síť, Wi-Fi a někdy i VoIP (POTS porty)
+* Pro masové nasazení do domácností, kde zákazník nevyžaduje vlastní router a preferuje jednoduché řešení „vše v jednom“
