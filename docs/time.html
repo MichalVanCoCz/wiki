@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pracovní doba: ČR & Shenzhen</title>
+    <style>
+        :root {
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --text-main: #ffffff;
+            --text-dim: #a0a0a0;
+            --brand-color: #EA592C;
+            --border-color: #333333;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+        }
+
+        .container { 
+            display: flex; 
+            gap: 30px; 
+            flex-wrap: wrap; 
+            padding: 20px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            padding: 40px;
+            border-radius: 24px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            width: 320px;
+            text-align: center;
+            border: 2px solid var(--border-color);
+            transition: transform 0.3s ease, border-color 0.3s ease;
+        }
+
+        /* Aktivní stav při pracovní době */
+        .is-working { 
+            border-color: var(--brand-color); 
+        }
+
+        h2 { 
+            margin: 0 0 10px 0; 
+            font-size: 1.6rem; 
+            color: var(--text-main);
+            letter-spacing: 0.5px;
+        }
+
+        .label { 
+            font-size: 0.9rem; 
+            color: var(--text-dim); 
+            margin-bottom: 5px; 
+            min-height: 20px;
+        }
+
+        .countdown { 
+            font-size: 3.5rem; 
+            font-weight: 500; 
+            margin: 10px 0; 
+            color: var(--brand-color);
+        }
+
+        .local-time { 
+            margin-top: 25px; 
+            font-size: 0.9rem; 
+            color: var(--text-dim); 
+            border-top: 1px solid var(--border-color); 
+            padding-top: 15px; 
+        }
+
+        .dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 8px;
+            background-color: var(--text-dim);
+        }
+
+        .is-working .dot {
+            background-color: var(--brand-color);
+            box-shadow: 0 0 10px var(--brand-color);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="card-cz" class="card">
+        <h2 id="name-cz">Česká republika</h2>
+        <div id="label-cz" class="label">--</div>
+        <p id="timer-cz" class="countdown">--h --m</p>
+        <div id="time-cz" class="local-time"><span class="dot"></span>Lokální čas: --:--</div>
+    </div>
+
+    <div id="card-sz" class="card">
+        <h2 id="name-sz">Shenzhen</h2>
+        <div id="label-sz" class="label">--</div>
+        <p id="timer-sz" class="countdown">--h --m</p>
+        <div id="time-sz" class="local-time"><span class="dot"></span>Lokální čas: --:--</div>
+    </div>
+</div>
+
+<script>
+    const START_HOUR = 8;
+    const END_HOUR = 17;
+
+    function update() {
+        const locations = [
+            { id: 'cz', zone: 'Europe/Prague' },
+            { id: 'sz', zone: 'Asia/Shanghai' }
+        ];
+
+        locations.forEach(loc => {
+            const now = new Date();
+            const locStr = now.toLocaleString('en-US', { timeZone: loc.zone, hour12: false });
+            const locDate = new Date(locStr);
+            
+            const hours = locDate.getHours();
+            const minutes = locDate.getMinutes();
+            const totalMinutesInDay = (hours * 60) + minutes;
+            
+            const startMins = START_HOUR * 60;
+            const endMins = END_HOUR * 60;
+            
+            let labelText = "";
+            let remainingMins = 0;
+            const card = document.getElementById(`card-${loc.id}`);
+
+            if (hours >= START_HOUR && hours < END_HOUR) {
+                // Pracovní doba
+                labelText = "Zbývá do konce pracovní doby";
+                remainingMins = endMins - totalMinutesInDay;
+                card.classList.add('is-working');
+            } else {
+                // Mimo pracovní dobu
+                labelText = "Zbývá do začátku pracovní doby";
+                card.classList.remove('is-working');
+                
+                if (hours < START_HOUR) {
+                    remainingMins = startMins - totalMinutesInDay;
+                } else {
+                    remainingMins = (24 * 60) - totalMinutesInDay + startMins;
+                }
+            }
+
+            const h = Math.floor(remainingMins / 60);
+            const m = remainingMins % 60;
+
+            document.getElementById(`label-${loc.id}`).textContent = labelText;
+            document.getElementById(`timer-${loc.id}`).textContent = `${h}h ${m}m`;
+            document.getElementById(`time-${loc.id}`).innerHTML = `<span class="dot"></span>Lokální čas: ${hours}:${minutes.toString().padStart(2, '0')}`;
+        });
+    }
+
+    // Aktualizace každých 30 sekund (pro minuty stačí)
+    setInterval(update, 30000);
+    update();
+</script>
+
+</body>
+</html>
