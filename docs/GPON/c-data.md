@@ -21,7 +21,7 @@ Aby bylo možné OLT spravovat z počítače připojeného do stejné datové s�
    1. V sekci VLANIF klikněte na tlačítko `Gateway`
    2. Vyberte rozhraní `Vlanif1` a zadejte IP adresu výchozí brány vašeho routeru
 
-> ⚠️ Po dokončení konfigurace v CMS vždy klikněte na tlačítko 💾 (Save Config) v horní liště, aby se nastavení v OLT uložilo do trvalé paměti. Bez uložení by se při restartu OLT vrátilo k původnímu nastavení.
+> ⚠️ Po dokončení konfigurace vždy klikněte na tlačítko 💾 (Save Config) v horní liště, aby se nastavení v OLT uložilo do trvalé paměti. Bez uložení by se při restartu OLT vrátilo k původnímu nastavení.
 
 ### Volitelné: Připojení do CMS (Cloud Management System)
 
@@ -96,7 +96,7 @@ Aby se nastavení automaticky aplikovalo na připojená ONT, musíte vytvořit A
 
 > ✅ Jakmile se nyní jakékoliv ONT připojí k danému PON portu, OLT mu automaticky odešle konfiguraci, která z něj udělá bridge. Provoz z LAN portu ONT bude transparentně přenesen do vaší lokální sítě skrze uplink port OLT.
 
-> ⚠️ Po dokončení konfigurace v CMS vždy klikněte na tlačítko 💾 (Save Config) v horní liště, aby se nastavení v OLT uložilo do trvalé paměti. Bez uložení by se při restartu OLT vrátilo k původnímu nastavení.
+> ⚠️ Po dokončení konfigurace vždy klikněte na tlačítko 💾 (Save Config) v horní liště, aby se nastavení v OLT uložilo do trvalé paměti. Bez uložení by se při restartu OLT vrátilo k původnímu nastavení.
 
 ## ISP
 
@@ -167,14 +167,133 @@ Pokud používáte [**ONT typu HGU**](GPON/pojmy.md#hgu-vs-sfu) (s integrovaným
 
 > ✅ Nyní, jakmile se připojí ONT se schodujícím se seriovým číslem k danému portu, OLT do ní automaticky nahraje nastavení pro 100 Mbps přípojku.
 
-> ⚠️ Po dokončení konfigurace v CMS vždy klikněte na tlačítko 💾 (Save Config) v horní liště, aby se nastavení v OLT uložilo do trvalé paměti. Bez uložení by se při restartu OLT vrátilo k původnímu nastavení.
+> ⚠️ Po dokončení konfigurace vždy klikněte na tlačítko 💾 (Save Config) v horní liště, aby se nastavení v OLT uložilo do trvalé paměti. Bez uložení by se při restartu OLT vrátilo k původnímu nastavení.
 
 ## Konfigurace WiFi 
 
-*TODO: To bude trochu složitější, protože OMCI na to nebude úplně dělané. Takové věci se asi budou muset řešit přes TR-069 aby to bylo alespoň do nějaké míry standardizované. Jinak leda přes web UI na samotné ONT.*
+*TODO: To bude trochu složitější, protože OMCI na to nebude úplně dělané. Takové věci se asi budou muset řešit přes TR-069 aby to bylo alespoň do nějaké míry standardizované. Jinak leda přes web UI na samotné ONT. Zeptat se Číňanů.*
 
 # Deployment profily
 
-*TODO: Asi by bylo dobrý popsat, co dělá každý profil do podrobna a co je tam možné nastavit. Scénáře možná stavit až na tom. Použít první verzi jako "minimální produkt" to co je napsané teď a od toho se odpíchnout.*
+## DBA profil
 
-*TODO: Možná by bylo dobré zajistit nějaké datasheety k jednotlivým ONT kde by byl přehled jaké parametry zkousnou. Stalo se mi, že připravené profily byly odeslány na ONT, ale zkouslo to pouze HGU od C-DATA, zatím co od BDCOM "failed".*
+Hlavním účelem DBA profilu je optimalizace využití přenosové kapacity optického vlákna v **upstreamu**. Namísto toho, aby měl každý uživatel pevně vyhrazenou rychlost, kterou nevyužívá neustále, umožňuje DBA profil přidělit nevyužitou kapacitu jiným aktivním uživatelům, čímž zvyšuje celkovou propustnost.
+
+### Typy šířky pásma
+
+V rámci DBA profilu se definují různé typy přenosových kapacit, které odpovídají požadavkům různých služeb:
+
+* **Fixed Bandwidth** (Fix – Type 1): Pevně vyhrazená kapacita, která je uživateli k dispozici neustále, bez ohledu na to, zda ji využívá. Je ideální pro služby extrémně citlivé na zpoždění a jitter, jako je VoIP nebo správa sítě.
+* **Assured Bandwidth** (Assure – Type 2/3): Garantovaná šířka pásma, kterou OLT poskytne ONT kdykoliv o ni požádá. Pokud ONT data neposílá, může být tato kapacita dočasně uvolněna pro jiný provoz.
+* **Maximum Bandwidth** (Max – Type 4): Horní limit (tzv. "best-effort"), který může ONT využít, pokud je v síti aktuálně volná kapacita. Tato rychlost není garantována a závisí na celkovém vytížení portu.
+* **Kombinované typy** (Assure & Max / Fix & Assure & Max): Umožňují kombinovat pevnou (Fix) garantovanou (Assure) a maximální (Max) rychlost, což je nejčastější nastavení pro běžné internetové tarify.
+
+[GEM porty](#gem-port) v rámci [T-CONT](#t-cont) sdílí tuto přidělenou šířku pásma.
+
+## Traffic profil
+
+Nastavení Traffic profilu je klíčovým krokem pro řízení šířky pásma v **downstreamu**. Zatímco [DBA profil](#dba-profil) se stará o upstream, Traffic profil definuje pravidla pro stahování dat.
+
+### Parametry
+
+* **CIR** (Committed Information Rate): Garantovaná přenosová rychlost
+  * Určuje minimální šířku pásma, kterou má zákazník (nebo služba) vždy k dispozici. OLT se snaží zajistit, aby tento objem dat prošel sítí i v případě vysokého vytížení linky.
+  * Ideální pro kritické služby jako VoIP (hlas) nebo IPTV, kde by kolísání rychlosti způsobilo výpadky.
+* **PIR** (Peak Information Rate): Maximální (špičková) přenosová rychlost
+  * Definuje absolutní strop, který nesmí datový tok překročit. Je to součet garantované rychlosti (CIR) a "nadbytečné" rychlosti, kterou může OLT přidělit, pokud je v síti zrovna volná kapacita
+* **CBS** (Committed Burst Size): Garantovaná velikost dávky dat
+  * Určuje objem dat, který může být přenesen rychlostí vyšší než CIR po velmi krátkou dobu, aniž by došlo k zahazování paketů. Pomáhá vyhlazovat drobné výkyvy v provozu.
+* **PBS** (Peak Burst Size): Maximální velikost dávky dat.
+  * Podobné jako CBS, ale vztahuje se k limitu PIR. Určuje, kolik dat může "proletět" špičkovou rychlostí v jednom okamžiku (burst). Jakmile je tento limit vyčerpán, OLT začne pakety nad rámec PIR nekompromisně zahazovat nebo označovat nižší prioritou.
+
+GPON využívá sdílené médium. OLT musí přesně vědět, kolik dat může do kterého GEM portu „pustit“, aby jeden stahující zákazník nezahltil celou větev pro ostatních 127 sousedů na stejném portu. Díky Traffic profilu na straně downstreamu a DBA profilu na straně uplinku máte plnou kontrolu nad obousměrným provozem v síti.
+
+## Line profil
+
+### Global Setting
+
+* **Profile Name:** Název profilu 
+* **Type:** Typ technologie (`gpon`)
+* **Mapping-mode:** Určuje, podle čeho bude OLT řadit data do kanálů. Nejrozšířenějším standardem je režim `VLAN`
+
+### Tcont
+
+T-CONT je virtuální kontejner, který reprezentuje přidělenou kapacitu pro nahrávání dat (upstream).
+* **Tcont1**: Výchozí předvytvořený kontejner. Je možné vytvořit další kliknutím na `+`
+* **DBA**: Ke každému T-CONTu je potřeba přiřadit **DBA profil**
+
+### Gemport
+
+* **Gemport1:** Výchozí předvytvořený gemport. Je možné vytvořit další kliknutím na `+`
+* **Gemport Car:** Možnost zapnout funkci omezování rychlosti na úrovni GEM portu (shaping/policing). Zde je možné přiřadit **Traffic profil** pro downstream i upstream
+
+### Mapping
+
+Zde se definují pravidla, která říkají: „Data z této VLANy patří do tohoto GEM portu“.
+
+* **Mapping1**: Výchozí mapping pro výchozí Gemport1. Pro další *Gemporty* je možné vytvořit další *Mapping* kliknutím na `+`. *Mapping1* odpovídá *Gemport1*, *Mapping2* odpovídá *Gemport2* atd.
+* **VLAN-transparent:** Pokud je zapnuté, OLT nebude VLAN značky kontrolovat a propustí vše tak, jak to přichází do odpovídajícího GEM portu
+* **Tag / Untag:** Volba, zda mají data do ONU přicházet s VLAN značkou (Tag) nebo mají být beze značky (Untag)
+* **User VLAN:** Nasavení jaké VLAN ID, má být mapováno na odpovídající GEM port.
+
+## Service profil
+
+### Basic Information
+
+* **Profile Name:** Název profilu
+* **Loopback Detection:** Zapnutí detekce smyček přímo na ONT. Pokud zákazník způsobí zasmyčkování provozu, jednotka port zablokuje
+* **ONU Capability Planning:**
+    * Definice počtu portů: je monžé nastavit pevný počet portů podle vašeho modelu ONT, nebo **zvolit Adaptive**, OLT tak automaticky detekuje počet portů podle připojené jednotky
+
+### IP Host Configuration
+
+Slouží k definici IP rozhraní přímo pro management daného ONT, pokud k němu chcete přistupovat jiným způsobem než přes OMCI/TR-069
+
+* **VLAN**: identifikační číslo VLANy, ve které má ONU komunikovat se správcovským serverem ACS
+* **Priority**: 802.1p priorita tohoto rozhraní
+* **Mode**:
+    * **DHCP**: Získání iP adresy automaticky přes DHCP server ve vaší síti
+    * **Static IP**: Zadání pevné IP adresy, masky a výchozí brány
+
+### ONU Port
+
+Tato část je nejdůležitější pro jednotky typu **SFU (Bridge)**.
+
+* **Port Config**
+    * **Unconcern:** Nastavujeme u **HGU** jednotek. OLT pak VLANy na portech ignoruje, budou řešeny ve WAN profilu
+    * **Concern:** Nastavujeme u **SFU** jednotek. Tím se aktivuje možnost editovat konkrétní porty
+
+* **Port Config -> `Edit`**
+    * **Mode:** 
+        * **Unconcern** *TODO: nepodařilo se mi zjistit co tohle dělá*
+        * **HGU**
+        * **SFU**
+    * **Native VLAN:** VLAN ID, kterým se automaticky označí neoznačená data přicházející na tento port
+    * **Native VLAN Priority:** Nastavení 802.1p priority (0–7)
+    * **Bandwidth Control:** Zde můžeš zapnout **Ingress** (vstupní) a **Egress** (výstupní) limitaci rychlosti přímo na daném fyzickém LAN portu
+
+* **Port VLAN Rules -> `Edit` -> VLAN Mode**
+    * **Transparent**  *TODO: doplnit*
+    * **Trunk**
+    * **Translation**
+    * **QinQ**
+
+### ONU Multicast
+
+Pokud vaše síť šíří televizi přes multicast, zde najdete pořebné nastavení.
+
+*   **ONU Multicast:** Zapnutí/vypnutí multicastu pro daný profil.
+*   **Multicast Mode:** Na výběr je **Snooping** (ONU sleduje IGMP zprávy), **Proxy** nebo **Unconcern**. *TODO: vysvětlit co to znamená*
+*   **Fast-leave:** Při zapnutém ONU (*TODO: ONU nebo ONT?*) okamžitě přestane posílat data kanálu, jakmile zákazník přepne na jiný. To šetří kapacitu optické linky.
+*   **Multicast Rules Configuration -> `Add`:**
+    *   **Port:** Na kterém LAN portu má IPTV fungovat
+    *   **Multicast VLAN ID:** Číslo VLAN, ve které teče TV stream.
+    *   **Multicast IP type:** **TODO**
+    *   **IGMP-Forward / Multicast-Forward:** **TODO**
+
+## TR-069 profil
+
+## WAN profil
+
+
+

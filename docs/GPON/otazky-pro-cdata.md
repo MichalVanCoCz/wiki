@@ -1,0 +1,1 @@
+* Jestli jde nakofigurovat z OLT WiFi SSID a heslo na ONT

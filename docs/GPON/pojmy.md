@@ -24,18 +24,6 @@ Systém je navržen tak, aby zvládal zařízení různých výrobců a různé 
 
 ![](assets/20260121_111841_CMS.png)
 
-### Vizuální monitoring a diagnostika
-
-CMS poskytuje **grafické rozhraní** pro sledování stavu sítě v reálném čase:
-
-* Nabízí přehledné **karty zařízení**, kde barvy (zelená, žlutá, červená) signalizují online stav a závažnost případných alarmů
-* Umožňuje sledovat statistiky alarmů, trendy a provádět **automatickou diagnostiku poruch** u koncových uživatelů
-* Poskytuje detailní pohled na výkonnostní metriky, jako je síla optického signálu (RX/TX), vytížení CPU nebo paměti
-
-### Škálovatelnost a dostupnost
-
-Platforma podporuje soukromé nasazení na fyzických strojích i cloudových hostitelích. Je navržena pro horizontální expanzi, což znamená, že dokáže obsloužit prakticky neomezený počet připojených zařízení v závislosti na výkonu serveru.
-
 ## OMCI
 
 OMCI (Optical Network Unit Management and Control Interface) je standartizovaný protokol (definovaný doporučením ITU-T G.984.4), který slouží k vzdálené správě a konfiguraci ONT přímo z OLT. Pracuje na 2. a 3. vrstvě a funguje jako most mezi OLT a ONT, který umožňuje poskytovatelům služeb spravovat koncová zařízení bez nutnosti manuálního zásahu u zákazníka.
@@ -127,39 +115,6 @@ BWmap obsahuje instrukce, které specifikují přesný začátek a konec časov�
 O přidělení šířky pásma rozhoduje modul DBA uvnitř OLT. Ten v reálném čase sbírá zprávy o stavu front v ONT, provádí výpočty podle nastavených priorit a výsledné instrukce odesílá právě skrze BWmap v každém sestupném rámci, tedy každých 125 μs.
 
 Díky BWmap může OLT dynamicky měnit velikost přiděleného času pro každé zařízení podle aktuální potřeby, což zvyšuje celkovou propustnost sítě a umožňuje obsloužit více uživatelů na jednom portu.
-
-## DBA profil
-
-Hlavním účelem DBA profilu je optimalizace využití přenosové kapacity optického vlákna v **upstreamu**. Namísto toho, aby měl každý uživatel pevně vyhrazenou rychlost, kterou nevyužívá neustále, umožňuje DBA profil přidělit nevyužitou kapacitu jiným aktivním uživatelům, čímž zvyšuje celkovou propustnost.
-
-### Typy šířky pásma
-
-V rámci DBA profilu se definují různé typy přenosových kapacit, které odpovídají požadavkům různých služeb:
-
-* **Fixed Bandwidth** (Fix – Type 1): Pevně vyhrazená kapacita, která je uživateli k dispozici neustále, bez ohledu na to, zda ji využívá. Je ideální pro služby extrémně citlivé na zpoždění a jitter, jako je VoIP nebo správa sítě.
-* **Assured Bandwidth** (Assure – Type 2/3): Garantovaná šířka pásma, kterou OLT poskytne ONT kdykoliv o ni požádá. Pokud ONT data neposílá, může být tato kapacita dočasně uvolněna pro jiný provoz.
-* **Maximum Bandwidth** (Max – Type 4): Horní limit (tzv. "best-effort"), který může ONT využít, pokud je v síti aktuálně volná kapacita. Tato rychlost není garantována a závisí na celkovém vytížení portu.
-* **Kombinované typy** (Assure & Max / Fix & Assure & Max): Umožňují kombinovat pevnou (Fix) garantovanou (Assure) a maximální (Max) rychlost, což je nejčastější nastavení pro běžné internetové tarify.
-
-[GEM porty](#gem-port) v rámci [T-CONT](#t-cont) sdílí tuto přidělenou šířku pásma.
-
-## Traffic profil
-
-Nastavení Traffic profilu je klíčovým krokem pro řízení šířky pásma v **downstreamu**. Zatímco [DBA profil](#dba-profil) se stará o upstream, Traffic profil definuje pravidla pro stahování dat.
-
-### Parametry
-
-* **CIR** (Committed Information Rate): Garantovaná přenosová rychlost
-  * Určuje minimální šířku pásma, kterou má zákazník (nebo služba) vždy k dispozici. OLT se snaží zajistit, aby tento objem dat prošel sítí i v případě vysokého vytížení linky.
-  * Ideální pro kritické služby jako VoIP (hlas) nebo IPTV, kde by kolísání rychlosti způsobilo výpadky.
-* **PIR** (Peak Information Rate): Maximální (špičková) přenosová rychlost
-  * Definuje absolutní strop, který nesmí datový tok překročit. Je to součet garantované rychlosti (CIR) a "nadbytečné" rychlosti, kterou může OLT přidělit, pokud je v síti zrovna volná kapacita
-* **CBS** (Committed Burst Size): Garantovaná velikost dávky dat
-  * Určuje objem dat, který může být přenesen rychlostí vyšší než CIR po velmi krátkou dobu, aniž by došlo k zahazování paketů. Pomáhá vyhlazovat drobné výkyvy v provozu.
-* **PBS** (Peak Burst Size): Maximální velikost dávky dat.
-  * Podobné jako CBS, ale vztahuje se k limitu PIR. Určuje, kolik dat může "proletět" špičkovou rychlostí v jednom okamžiku (burst). Jakmile je tento limit vyčerpán, OLT začne pakety nad rámec PIR nekompromisně zahazovat nebo označovat nižší prioritou.
-
-GPON využívá sdílené médium. OLT musí přesně vědět, kolik dat může do kterého GEM portu „pustit“, aby jeden stahující zákazník nezahltil celou větev pro ostatních 127 sousedů na stejném portu. Díky Traffic profilu na straně downstreamu a DBA profilu na straně uplinku máte plnou kontrolu nad obousměrným provozem v síti.
 
 ## HGU vs. SFU
 
