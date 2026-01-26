@@ -282,14 +282,16 @@ Tato část je nejdůležitější pro jednotky typu **SFU (Bridge)**.
 
 Pokud vaše síť šíří televizi přes multicast, zde najdete pořebné nastavení.
 
+<!--
 *   **ONU Multicast:** Zapnutí/vypnutí multicastu pro daný profil.
 *   **Multicast Mode:** Na výběr je **Snooping** (ONU sleduje IGMP zprávy), **Proxy** nebo **Unconcern**. *TODO: vysvětlit co to znamená*
-*   **Fast-leave:** Při zapnutém ONU (*TODO: ONU nebo ONT?*) okamžitě přestane posílat data kanálu, jakmile zákazník přepne na jiný. To šetří kapacitu optické linky.
+*   **Fast-leave:** Při zapnutém ONU (*TODO: ONU nebo OLT?*) okamžitě přestane posílat data kanálu, jakmile zákazník přepne na jiný. To šetří kapacitu optické linky.
 *   **Multicast Rules Configuration -> `Add`:**
     *   **Port:** Na kterém LAN portu má IPTV fungovat
     *   **Multicast VLAN ID:** Číslo VLAN, ve které teče TV stream.
-    *   **Multicast IP type:** **TODO**
-    *   **IGMP-Forward / Multicast-Forward:** **TODO**
+    *   **Multicast IP type:** *TODO*
+    *   **IGMP-Forward / Multicast-Forward:** *TODO*
+-->
 
 ## TR-069 profil
 
