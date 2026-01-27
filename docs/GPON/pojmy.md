@@ -38,7 +38,7 @@ OLT přes OMCI definuje, jak se má ONT chovat, což zahrnuje vytváření T-CON
 * **Sledování výkonu**: ONT skrze OMCI neustále hlásí statistiky provozu, jako je propustnost, chybovost paketů, latence nebo síla optického signálu.
 * **Údržba a upgrady**: OMCI usnadňuje vzdálenou aktualizaci firmwaru ONT a diagnostiku spojení.
 
-### Interoperabilita (Vendor-neutrality)
+### Interoperabilita
 
 Díky tomu, že je OMCI mezinárodním standardem, zajišťuje, že OLT od jednoho výrobce (např. C-DATA, Bdcom) může komunikovat a spravovat ONT od jiných výrobců (např. Huawei, TP-Link), pokud obě zařízení standard OMCI plně podporují. To dává operátorům flexibilitu při výběru koncových zařízení bez závislosti na jednom dodavateli.
 

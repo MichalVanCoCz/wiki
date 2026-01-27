@@ -1,23 +1,54 @@
 <!DOCTYPE html>
 <html lang="cs">
+
 <head>
   <meta charset="UTF-8">
   <title>GPON Wiki</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <!-- Theme: Simple Dark -->
   <link rel="stylesheet" href="style.css">
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="//unpkg.com/@fortawesome/fontawesome-free/css/fontawesome.css" />
+  <link rel="stylesheet" href="//unpkg.com/@fortawesome/fontawesome-free/css/brands.css" />
+  <link rel="stylesheet" href="//unpkg.com/@fortawesome/fontawesome-free/css/regular.css" />
+  <link rel="stylesheet" href="//unpkg.com/@fortawesome/fontawesome-free/css/solid.css" />
+
 </head>
+
 <body>
-  <div id="app">Načítám wiki...</div>
+  <div id="app">Načítání stránky...</div>
   <script>
     window.$docsify = {
       name: 'Wiki',
       logo: '/assets/VanCo_logo_0.png',
       loadSidebar: true, // Důležité pro strom stránek
       subMaxLevel: 2,    // Zobrazí nadpisy z článků v menu
-      auto2top: true     // Po kliknutí na odkaz skočí nahoru
+      auto2top: true,    // Po kliknutí na odkaz skočí nahoru
+
+      'flexible-alerts': { // https://github.com/fzankl/docsify-plugin-flexible-alerts
+        save: {
+          label: ' ',
+          icon: 'far fa-save',
+          className: 'important' // barva podle vašeho výběru (note, tip, warning, attention)
+        }
+      }
+    }
+    window.$docsify.customPageTitle = {
+      prefix: "VanCo.cz wiki",      // [optional] title prefix. default: false eg: prefix: "Application"
+      suffix: false,      // [optional] title suffix. default: false eg: suffix: "v1.0.0"
+      separator: '|',       // [optional] separator for title eg: title->   prefix | title | suffix
+      debug: false,      // [optional] should debug
     }
   </script>
   <script src="//cdn.jsdelivr.net/npm/docsify/lib/docsify.min.js"></script>
+  <script src="https://unpkg.com/docsify-plugin-flexible-alerts"></script>
+  <script src="//cdn.jsdelivr.net/npm/@sujaykumarh/docsify-plugin-title@2.x/dist/plugin.min.js"></script>
+  <script src="//unpkg.com/docsify-kroki"></script> <!-- https://kroki.io/#try -->
+  <script src="//unpkg.com/docsify-fontawesome/dist/docsify-fontawesome.min.js"></script> <!-- Font Awesome Icons -->
+
+
+
 </body>
+
 </html>

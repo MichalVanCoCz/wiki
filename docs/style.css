@@ -2345,3 +2345,22 @@ body .sidebar {
 }
 
 /*# sourceMappingURL=theme-simple-dark.css.map */
+/*
+/* Tvoje vlastní úpravy barev */
+:root {
+  /* 1. Základní pozadí celé stránky */
+  --base-background: #333333;
+
+  /* 2. Pozadí hlavní části s obsahem ) */
+  --content-background: #333333;
+
+  /* 3. Pro jistotu i pozadí pro "main" element, pokud ho téma vynucuje */
+  --mono-hue: 0; /* Resetuje nádech barev do šeda */
+  --mono-saturation: 0%;
+}
+
+.markdown-section img {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
